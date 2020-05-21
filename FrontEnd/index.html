@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Required meta tags -->
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="css/bootstrap.css">
+
+    <title>Practica 2</title>
+
+    <style type="text/css" media="screen">
+        .edit {
+            display: inline-block;
+            position: relative;
+            width: 100%;
+            height: 275px;
+        }
+
+        #cons {
+            display: inline-block;
+            position: relative;
+            width: 100%;
+            height: 165px;
+        }
+
+        .editores {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            border-radius: 6px;
+        }
+    </style>
+
+</head>
+
+<body>
+
+<!--bootstrap js-->
+<script src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+        integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+        crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+        integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+        crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+        integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+        crossorigin="anonymous"></script>
+<script src="js/download.js"></script>
+
+<nav class="navbar navbar-expand-lg navbar-light bg-primary">
+    <a class="navbar-brand" href="#">Proyecto 2</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav mr-auto">
+            <li class="nav-item">
+                <a class="nav-link" onclick="Analizar()">Parse</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" onclick="dldc()">Guardar</a>
+            </li>
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" role="button" data-toggle="dropdown"
+                   aria-haspopup="true" aria-expanded="false">
+                    Reportes
+                </a>
+                <div class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <a class="dropdown-item" onclick="dld()">Python</a>
+                    <a class="dropdown-item" onclick="dldh()">HTML</a>
+                    <div class="dropdown-divider"></div>
+                    <a class="dropdown-item">Errores</a>
+                </div>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<h3 class="text-center">Detector de copias</h3>
+
+<style>
+    a.active.nav-link {
+        background-color: #03c6e3 !important;
+        color: black !important;
+    }
+</style>
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md">
+            <div class="row ">
+                <h4 class="col">Codigo original</h4>
+                <div class="col-auto">
+                    <label class="btn btn-danger btn-sm">
+                        Cargar texto <input type="file" id="input-file" hidden>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm">
+                    <div class="edit">
+                        <div id="editor 1" class="editores">//Ingrese el codigo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md">
+            <div class="row ">
+                <h4 class="col">Codigo copia</h4>
+                <div class="col-auto">
+                    <label class="btn btn-danger btn-sm">
+                        Cargar texto <input type="file" id="input-file2" hidden>
+                    </label>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-sm">
+                    <div class="edit">
+                        <div id="editor 2" class="editores">//Ingrese el codigo</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md">
+            <div id="html">
+                <h4>Consola</h4>
+                <div class="edit" id="cons">
+                    <div id="editorH" class="editores"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md">
+            <div id="err">
+                <h4>Errores lexicos</h4>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Linea</th>
+                        <th scope="col">Columna</th>
+                        <th scope="col">Desc</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbodye">
+
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="col-md">
+            <div id="err2">
+                <h4>Errores Sintacticos</h4>
+                <table class="table">
+                    <thead>
+                    <tr>
+                        <th scope="col">#</th>
+                        <th scope="col">Linea</th>
+                        <th scope="col">Columna</th>
+                        <th scope="col">Desc</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tbodye2">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="Ace/ace.js" type="text/javascript" charset="utf-8"></script>
+<script src="js/tabs.js"></script>
+<script>
+
+    var ed = ace.edit("editor 1");
+    ed.session.setMode("ace/mode/java");
+    ed.setTheme("ace/theme/monokai");
+    ed.session.setUseSoftTabs(true);
+    ed.setShowPrintMargin(false);
+
+    var ed2 = ace.edit("editor 2");
+    ed2.session.setMode("ace/mode/java");
+    ed2.setTheme("ace/theme/monokai");
+    ed2.setReadOnly(false);
+    ed2.session.setUseSoftTabs(true);
+    ed2.setShowPrintMargin(false);
+
+    var ed3 = ace.edit("editorH");
+    ed3.session.setMode("ace/mode/plain_text");
+    ed3.setTheme("ace/theme/gob");
+    ed3.setReadOnly(true);
+    ed3.session.setUseSoftTabs(true);
+    ed3.setShowPrintMargin(false);
+
+</script>
+
+</body>
+</html>

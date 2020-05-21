@@ -8,8 +8,8 @@
 [/][*][^*]*[*]+([^/*][^*]*[*]+)*[/]   /* IGNORE */
 
 /* NATIVE VALUES */
-[0-9]+\b                        return 'int'
 [0-9]+("."[0-9]+)?\b            return 'double'
+[0-9]+\b                        return 'int'
 [\"]([^\"\n]|(\\\"))*[\"]       return 'cadena'
 [\'][^\'\n][\']                 return 'cadena_char'
 
@@ -126,7 +126,7 @@
 START : IMPOCLASS
             ;
 
-IMPOCLASS : IMPORTLIST CLASSLIST IMPOCLASS EOF
+IMPOCLASS : IMPORTLIST CLASSLIST IMPOCLASS
           | EOF
 ;
 
