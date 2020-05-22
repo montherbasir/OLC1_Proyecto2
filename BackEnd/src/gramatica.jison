@@ -1,29 +1,26 @@
+
+%{
+      let errores = [];
+%}
+
 /* LEXICAL ANALUSIS */
 %lex
 %options case-sensitive
-
-/* NATIVE VALUES */
-[0-9]+\b                        return 'Integer_Number'
-[0-9]+("."[0-9]+)?\b            return 'Double_Number'
-[\"]([^\"\n]|(\\\"))*[\"]       return 'String_Literal'
-[\'][^\'\n][\']                 return 'Char_Literal'
-([a-zA-Z])[a-zA-Z0-9_]*         return 'ID'
-
 %%
-\s+         /* skip whitespace */
-/* COMMENTS */
-("//".*\r\n)|("//".*\n)|("//".*\r)
-[/][*][^*]*[*]+([^/*][^*]*[*]+)*[/]
+
+\s+                                   /* IGNORE */
+"//".*                                /* IGNORE */
+[/][*][^*]*[*]+([^/*][^*]*[*]+)*[/]   /* IGNORE */
 
 /* NATIVE VALUES */
-{integer}               return 'Integer_Number'
-{double}                return 'Double_Number'
-{stringL}               return 'String_Literal'
-{charL}                 return 'Char_Literal'
-"true"                  return 'WR_TRUE'
-"false"                 return 'WR_FALSE'
+[0-9]+("."[0-9]+)?\b            return 'double'
+[0-9]+\b                        return 'int'
+[\"]([^\"\n]|(\\\"))*[\"]       return 'cadena'
+[\'][^\'\n][\']                 return 'cadena_char'
 
-/* SYMBOLS */
+
+"true"                  return 'res_true'
+"false"                 return 'res_false'
 
 /* ARITMETIC SYMBOLS */
 "++"                    return 'S_PLUSPLUS'
@@ -35,13 +32,14 @@
 "+"                     return 'S_PLUS'
 "-"                     return 'S_MINUS'
 
+
 /* RELACIONAL SYMBOLS */
-"<"                     return 'S_MINOR'
-">"                     return 'S_MAJOR'
 "<="                    return 'S_MINOREQUALS'
 ">="                    return 'S_MAJOREQUALS'
 "=="                    return 'S_EQUALSEQUALS'
 "!="                    return 'S_DIFFERENT'
+"<"                     return 'S_MINOR'
+">"                     return 'S_MAJOR'
 
 /* LOGICAL SYMBOLS */
 "||"                    return 'S_OR'
@@ -60,11 +58,11 @@
 
 /* RESERVED WORDS */
 /* TYPES */
-"int"                   return 'WR_INT'
-"double"                return 'WR_DOUBLE'
-"boolean"               return 'WR_BOOLEAN'
-"char"                  return 'WR_CHAR'
-"String"                return 'WR_STRING'
+"int"                   return 'res_int'
+"double"                return 'res_double'
+"boolean"               return 'res_boolean'
+"String"                return 'res_string'
+"char"                  return 'res_char'
 
 /* GENERAL RESERVED WORDS */
 "class"                 return 'class'
@@ -105,13 +103,12 @@
 "out"                   return 'out'
 "print"                 return 'print'
 "println"               return 'println'
-
-/* ID */
-{id}                    return 'id'
+([a-zA-Z])[a-zA-Z0-9_]*        return 'id'
 .                       { console.error('Este es un error léxico: ' + yytext + ', en la linea: ' + yylloc.first_line + ', en la columna: ' + yylloc.first_column); }
 <<EOF>>                 return 'EOF'
 
 /lex
+
 
 /* PRECEDENCE */
 %left 'else'
@@ -131,15 +128,20 @@
 %%
 
 
-START : IMPORTLIST CLASSLIST EOF
+START : IMPOCLASS
             ;
 
+IMPOCLASS : IMPORTLIST CLASSLIST IMPOCLASS
+          | EOF
+;
+
 IMPORTLIST : import id SEMICOLON IMPORTLIST
-            | //Epsilon
+|
             ;
 
 CLASSLIST : class id S_OPEN_KEY INSIDECLASS S_CLOSE_KEY
-            | //Epsilon
+CLASSLIST
+|
             ;
 
 INSIDECLASS :     TYPE id FUNCTIONORNOT INSIDECLASS
@@ -152,13 +154,13 @@ FUNCTIONORNOT :   S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SE
 MAINORNOT :   main S_OPEN_PARENTHESIS S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
             | id S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
             ;
-TYPE : WR_INT | WR_DOUBLE | WR_CHAR | WR_STRING | WR_BOOLEAN
+TYPE : res_int | res_double | res_boolean | res_string | res_char
             ;
 
 PARAMETER : PARAMETERDECLARATION
             | //Epsilon
             ;
-PARAMETERDECLARATION :S_EQUALS TYPE id PARAMETERLIST
+PARAMETERDECLARATION : TYPE id PARAMETERLIST
             ;
 PARAMETERLIST : S_COMMA PARAMETERDECLARATION
             | // Epsilon
@@ -199,7 +201,7 @@ OPTAORCALL :  S_EQUALS EXPRESSION
             ;
 
 /* PRINT STATEMENTS */
-PRINTSENTENCE : System S_POINT out PRINTOPT SEMICOLON
+PRINTSENTENCE : System S_POINT out S_POINT PRINTOPT SEMICOLON
             ;
 PRINTOPT :    print S_OPEN_PARENTHESIS IMPRESSION S_CLOSE_PARENTHESIS
             | println S_OPEN_PARENTHESIS IMPRESSION S_CLOSE_PARENTHESIS
@@ -264,10 +266,25 @@ EXPRESSION :  S_MINUS EXPRESSION %prec UMINUS
             | EXPRESSION S_AND EXPRESSION
             | S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS
             | id
-            | Integer_Number
-            | Double_Number
-            | String_Literal
-            | Char_Literal
-            | true
-            | false
+            | int
+            | double
+            | cadena
+            | cadena_char
+            | res_true
+            | res_false
+            | id S_OPEN_PARENTHESIS OPPARCALL S_CLOSE_PARENTHESIS
             ;
+OPPARCALL : EXPRESSION EXPLIST
+           | //epsilon
+;
+EXPLIST : S_COMMA EXPRESSION EXPLIST
+            | //
+;
+
+syntax_error
+    : error
+      {
+        errores.push({"valor":yytext,"tipo":"Sintactico","fila":this._$.first_line, "columna":this._$.first_column});
+        $$ = {"error":$1};
+      }
+    ;
