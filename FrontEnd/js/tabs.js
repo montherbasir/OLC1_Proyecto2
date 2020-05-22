@@ -51,7 +51,7 @@ function printError(errores) {
         session.insert({
             row: session.getLength(),
             column: 0
-        }, "Error " + err.tipo + ": \"" + err.valor + "\" en linea " + err.fila + " columna " + err.columna + "\n");;
+        }, err.valor + "\n");
     });
 }
 
@@ -60,6 +60,10 @@ document.getElementById('parse').onclick = async function () {
     console.log(res);
     printError(res.errores);
 };
+
+document.getElementById('limpiar').onclick = function(){
+    ace.edit("editorH").setValue("");
+}
 
 async function postData(txt) {
     let url = "http://localhost:4000/parse";

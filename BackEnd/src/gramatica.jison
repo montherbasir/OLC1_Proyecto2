@@ -128,24 +128,38 @@
 %%
 
 
-START : IMPOCLASS
+START : IMPOCLASS EOF
+                    {
+                     return {"AST": $1, "errores":errores};
+                    }
+        | EOF
+                    {
+                     return {"AST": {}, "errores":errores};
+                    }
+        | error EOF
+                    {
+                     return {"AST": {}, "errores":errores};
+                    }
             ;
 
 IMPOCLASS : IMPORTLIST CLASSLIST IMPOCLASS
-          | EOF
+            | error CLASSLIST IMPOCLASS
+            |
 ;
 
 IMPORTLIST : import id SEMICOLON IMPORTLIST
+| syntax_error IMPORTLIST
 |
             ;
 
-CLASSLIST : class id S_OPEN_KEY INSIDECLASS S_CLOSE_KEY
-CLASSLIST
+CLASSLIST : class id S_OPEN_KEY INSIDECLASS S_CLOSE_KEY CLASSLIST
+| syntax_error CLASSLIST
 |
             ;
 
 INSIDECLASS :     TYPE id FUNCTIONORNOT INSIDECLASS
                 | void MAINORNOT INSIDECLASS
+                | syntax_error INSIDECLASS
                 | //Epsilon
             ;
 FUNCTIONORNOT :   S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
@@ -154,17 +168,22 @@ FUNCTIONORNOT :   S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SE
 MAINORNOT :   main S_OPEN_PARENTHESIS S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
             | id S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
             ;
+
 TYPE : res_int | res_double | res_boolean | res_string | res_char
             ;
 
 PARAMETER : PARAMETERDECLARATION
+               | error
             | //Epsilon
             ;
+
 PARAMETERDECLARATION : TYPE id PARAMETERLIST
             ;
+
 PARAMETERLIST : S_COMMA PARAMETERDECLARATION
             | // Epsilon
             ;
+
 SENTENCESLIST :  DECLARATIONSENTENCE SENTENCESLIST
                 | ASSIGNMENTORCALLSENTENCE SENTENCESLIST
                 | PRINTSENTENCE SENTENCESLIST
@@ -176,8 +195,10 @@ SENTENCESLIST :  DECLARATIONSENTENCE SENTENCESLIST
                 | CONTINUESENTENCE SENTENCESLIST
                 | BREAKSENTENCE SENTENCESLIST
                 | RETURNSENTENCE SENTENCESLIST
+                | syntax_error SENTENCELIST
                 | //Epsilon
             ;
+
 CONTINUESENTENCE : continue SEMICOLON
             ;
 BREAKSENTENCE : break SEMICOLON
@@ -282,9 +303,12 @@ EXPLIST : S_COMMA EXPRESSION EXPLIST
 ;
 
 syntax_error
-    : error
+    : error SEMICOLON
       {
-        errores.push({"valor":yytext,"tipo":"Sintactico","fila":this._$.first_line, "columna":this._$.first_column});
         $$ = {"error":$1};
       }
+      | error S_CLOSE_KEY
+       {
+         $$ = {"error":$1};
+       }
     ;
