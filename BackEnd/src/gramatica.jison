@@ -136,172 +136,241 @@ START : IMPOCLASS EOF
                     {
                      return {"AST": {}, "errores":errores};
                     }
-        | error EOF
+     /*   | error EOF
                     {
-                     return {"AST": {}, "errores":errores};
-                    }
+                     return {"AST": {"error":$1}, "errores":errores};
+                    }*/
             ;
 
-IMPOCLASS : IMPORTLIST CLASSLIST IMPOCLASS
-            | error CLASSLIST IMPOCLASS
-            |
+IMPOCLASS : IMPOCLASS IMPORTLIST CLASSLIST {
+$1.push({"imports":$2,"clases":$3});
+$$=$1;
+}
+          //  | error CLASSLIST IMPOCLASS
+            |IMPORTLIST CLASSLIST {
+
+$$=[{"imports":$1,"clases":$2}];
+
+}
 ;
 
-IMPORTLIST : import id SEMICOLON IMPORTLIST
-| syntax_error IMPORTLIST
-|
+IMPORTLIST : IMPORTLIST import id SEMICOLON  {
+$1.push({"id":$3});
+$$=$1;
+}
+//| syntax_error IMPORTLIST
+|import id SEMICOLON{
+$$=[{"id":$2}];
+}
             ;
 
-CLASSLIST : class id S_OPEN_KEY INSIDECLASS S_CLOSE_KEY CLASSLIST
-| syntax_error CLASSLIST
-|
+CLASSLIST :CLASSLIST class id S_OPEN_KEY INSIDECLASS S_CLOSE_KEY {
+
+$1.push({"class":{"id":$3,"inside":$5}});
+$$=$1;
+}
+//| syntax_error CLASSLIST
+| class id S_OPEN_KEY INSIDECLASS S_CLOSE_KEY {
+
+$$=[{"class":{"id":$2,"inside":$4}}];
+
+}
+;
+INSIDECLASS : INSIDECLASS TYPE id FUNCTIONORNOT {
+$1.push({"instruccion":{"tipoDato":$2,"id":$3,"instruccion":$4}});
+$$=$1;
+}
+|TYPE id FUNCTIONORNOT {
+ $$=[{"instruccion":{"tipoDato":$1,"id":$2,"instruccion":$3}}];
+ }
+|INSIDECLASS void MAINORNOT {
+$1.push({"instruccion":{"tipoDato":$2,"instruccion":$3}});
+$$=$1;
+}
+|void MAINORNOT {
+                 $$=[{"instruccion":{"tipoDato":$1,"instruccion":$2}}];
+                 }
+//| syntax_error INSIDECLASS
+| %empty
+            ;
+FUNCTIONORNOT :   S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY{
+$$={"tipo":"funcion","params":$2,"sentencias":$5};
+}
+                | IDLIST OPTASSIGNMENT SEMICOLON{
+                $$={"tipo":"declaracion","ids":$1,"asignacion":$2};
+                }
+            ;
+MAINORNOT :   main S_OPEN_PARENTHESIS S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY{
+$$={"tipo":"main","sentencias":$5};
+}
+| id S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY {
+$$={"tipo":"funcion","id":$1,"params":$3,"sentencias":$6};
+}
+;
+
+TYPE : res_int{$$=$1;}
+| res_double {$$=$1;}
+| res_boolean {$$=$1;}
+| res_string {$$=$1;}
+| res_char{$$=$1;}
+            ;
+PARAMETER :
+            | PARAMETERDECLARATION PARAMETERLIST {
+                                                 if($2!==undefined){
+                                                 $2.push($1);
+                                                              $$=$2;
+                                                 }else{
+                                                 $$=[$1];
+                                                 }              }
+           // | error
+            | %empty
             ;
 
-INSIDECLASS :     TYPE id FUNCTIONORNOT INSIDECLASS
-                | void MAINORNOT INSIDECLASS
-                | syntax_error INSIDECLASS
-                | //Epsilon
-            ;
-FUNCTIONORNOT :   S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
-                | IDLIST OPTASSIGNMENT SEMICOLON
-            ;
-MAINORNOT :   main S_OPEN_PARENTHESIS S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
-            | id S_OPEN_PARENTHESIS PARAMETER S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
+PARAMETERDECLARATION : TYPE id {$$={"tipo":$1,"id":$2};}
             ;
 
-TYPE : res_int | res_double | res_boolean | res_string | res_char
-            ;
-
-PARAMETER : PARAMETERDECLARATION
-               | error
-            | //Epsilon
-            ;
-
-PARAMETERDECLARATION : TYPE id PARAMETERLIST
-            ;
-
-PARAMETERLIST : S_COMMA PARAMETERDECLARATION
-            | // Epsilon
-            ;
-
-SENTENCESLIST :  DECLARATIONSENTENCE SENTENCESLIST
-                | ASSIGNMENTORCALLSENTENCE SENTENCESLIST
-                | PRINTSENTENCE SENTENCESLIST
-                | IFELSESENTENCE SENTENCESLIST
-                | SWITCHSENTENCE SENTENCESLIST
-                | FORSENTENCE SENTENCESLIST
-                | WHILESENTENCE SENTENCESLIST
-                | DOWHILESENTENCE SENTENCESLIST
-                | CONTINUESENTENCE SENTENCESLIST
-                | BREAKSENTENCE SENTENCESLIST
-                | RETURNSENTENCE SENTENCESLIST
+PARAMETERLIST : PARAMETERLIST S_COMMA PARAMETERDECLARATION{
+$1.push($3);
+$$=$1;
+}
+            | S_COMMA PARAMETERDECLARATION {
+            $$=[$2];
+            }
+            | %empty
+;
+SENTENCESLIST :  SENTENCESLIST DECLARATIONSENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST ASSIGNMENTORCALLSENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST PRINTSENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST IFELSESENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST SWITCHSENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST FORSENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST WHILESENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST DOWHILESENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST CONTINUESENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST BREAKSENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST RETURNSENTENCE {   $1.push($2);     $$=$1;   }
+                | SENTENCESLIST DECLARATIONSENTENCE {   $1.push($2);     $$=$1;   }
+                | ASSIGNMENTORCALLSENTENCE {$$=[$1]}
+                | PRINTSENTENCE {$$=[$1]}
+                | IFELSESENTENCE {$$=[$1]}
+                | SWITCHSENTENCE {$$=[$1]}
+                | FORSENTENCE {$$=[$1]}
+                | WHILESENTENCE {$$=[$1]}
+                | DOWHILESENTENCE {$$=[$1]}
+                | CONTINUESENTENCE {$$=[$1]}
+                | BREAKSENTENCE {$$=[$1]}
+                | RETURNSENTENCE {$$=[$1]}
                 | syntax_error SENTENCELIST
-                | //Epsilon
-            ;
+                | %empty
+                 ;
 
-CONTINUESENTENCE : continue SEMICOLON
+CONTINUESENTENCE : continue SEMICOLON {$$={"instruccion":"continue"}}
             ;
-BREAKSENTENCE : break SEMICOLON
+BREAKSENTENCE : break SEMICOLON {$$={"instruccion":"break"}}
             ;
-RETURNSENTENCE : return IMPRESSION SEMICOLON
+RETURNSENTENCE : return IMPRESSION SEMICOLON {$$={"instruccion":"return","return":$2};}
             ;
-DECLARATIONSENTENCE : TYPE DECLARATIONVARIABLES
+DECLARATIONSENTENCE : TYPE DECLARATIONVARIABLES {$$={"instruccion":"declaracion","tipo":$1,"variables":$2};}
             ;
-DECLARATIONVARIABLES : id IDLIST OPTASSIGNMENT SEMICOLON
+DECLARATIONVARIABLES : id IDLIST OPTASSIGNMENT SEMICOLON {if($2!==undefined){$2.push($1);$$={"lista":$2,"asignacion":$3}]else{$$=[$1];}}
             ;
-IDLIST :  S_COMMA id IDLIST
-        | //Epsilon
-            ; // accept Epsilon
-OPTASSIGNMENT :   S_EQUALS EXPRESSION
-                | //Epsilon
+IDLIST : IDLIST S_COMMA id {$1.push($3);$$=$1;}
+        | S_COMMA id {$$=[$2];}
+        | %empty
             ;
-ASSIGNMENTORCALLSENTENCE : id OPTAORCALL SEMICOLON
+OPTASSIGNMENT :   S_EQUALS EXPRESSION{$$={"asignacion":$2};}
+                | %empty
             ;
-OPTAORCALL :  S_EQUALS EXPRESSION
-            | S_OPEN_PARENTHESIS PARAMETERLISTCALL S_CLOSE_PARENTHESIS
+ASSIGNMENTORCALLSENTENCE : id OPTAORCALL SEMICOLON {$$={"instruccion":"asignacion/llamada","id":$1,$2}}
+            ;
+OPTAORCALL :  S_EQUALS EXPRESSION {$$={"asignacion":$2}}
+            | S_OPEN_PARENTHESIS PARAMETERLISTCALL S_CLOSE_PARENTHESIS {$$={"parametros":"2"}}
             ;
 
 /* PRINT STATEMENTS */
-PRINTSENTENCE : System S_POINT out S_POINT PRINTOPT SEMICOLON
+PRINTSENTENCE : System S_POINT out S_POINT PRINTOPT SEMICOLON {$$={"instruccion":"print","print":$5}}
             ;
-PRINTOPT :    print S_OPEN_PARENTHESIS IMPRESSION S_CLOSE_PARENTHESIS
-            | println S_OPEN_PARENTHESIS IMPRESSION S_CLOSE_PARENTHESIS
+PRINTOPT :    print S_OPEN_PARENTHESIS IMPRESSION S_CLOSE_PARENTHESIS{$$=$3}
+            | println S_OPEN_PARENTHESIS IMPRESSION S_CLOSE_PARENTHESIS{$$=$3}
             ;
-IMPRESSION : EXPRESSION
-            | //Epsilon
+IMPRESSION : EXPRESSION {$$=$1}
+            | %empty
             ;
 
 /* CONDITIONAL STATEMENTS */
-IFELSESENTENCE :  if S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
-                | if S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY else S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
-                | if S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY else IFELSESENTENCE
+IFELSESENTENCE :  if S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY {$$={"instruccion":"if","if":$3,"sent":$5}}
+                | if S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY else S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY {$$={"instruccion":"if","if":$3,"sent":$5,"else":$10}}
+                | if S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY else IFELSESENTENCE {$$={"instruccion":"if","if":$3,"sent":$5,"else":$9}}
             ;
 
-SWITCHSENTENCE : switch S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY CASELIST OPTDEFAULT S_CLOSE_KEY
+SWITCHSENTENCE : switch S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY CASELIST OPTDEFAULT S_CLOSE_KEY {$$={"instruccion":"switch","if":$3,"case":$6,"default":$7}}
             ;
-CASELIST :   case EXPRESSION S_TWOPOINTS SENTENCESLIST CASELIST
-            | //Epsilon
+CASELIST :   CASELIST case EXPRESSION S_TWOPOINTS SENTENCESLIST {$1.push({"case":$3,"sent":$5});$$=$1;}
+            | case EXPRESSION S_TWOPOINTS SENTENCESLIST {$$=[{"case":$2,"sent":$4}]}
+            | %empty
             ;
-OPTDEFAULT : default S_TWOPOINTS SENTENCESLIST
-            | //Epsilon
+OPTDEFAULT : default S_TWOPOINTS SENTENCESLIST{$$=$3;}
+            | %empty
             ;
 
 /* LOOPING STATEMENTS */
-FORSENTENCE : for S_OPEN_PARENTHESIS OPTTYPE ASSIGNMENTFOR SEMICOLON EXPRESSION SEMICOLON EXPRESSION INCDEC S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
+FORSENTENCE : for S_OPEN_PARENTHESIS OPTTYPE ASSIGNMENTFOR SEMICOLON EXPRESSION SEMICOLON EXPRESSION INCDEC S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY{$$={"for":"for"}}
             ;
 OPTTYPE : TYPE
-        | //Epsilon
+        | %empty
             ;
 ASSIGNMENTFOR : id S_EQUALS EXPRESSION
             ;
 INCDEC :  S_PLUSPLUS
         | S_MINUSMINUS
-        | //Epsilon
+        | %empty
             ;
-WHILESENTENCE : while S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY
+WHILESENTENCE : while S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY {$$={"while":"while"}}
             ;
 
-DOWHILESENTENCE : do S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY while S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS SEMICOLON
+DOWHILESENTENCE : do S_OPEN_KEY SENTENCESLIST S_CLOSE_KEY while S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS SEMICOLON {$$={"dowhile":"dowhile"}}
             ;
+
 PARAMETERLISTCALL :   EXPRESSION PLIST
-                    | //Epsilon
+                    | %empty
             ;
 PLIST :   S_COMMA EXPRESSION PLIST
-        | //Epsilon
+        | %empty
             ;
-EXPRESSION :  S_MINUS EXPRESSION %prec UMINUS
-            | S_NOT EXPRESSION
-            | EXPRESSION S_PLUS EXPRESSION
-            | EXPRESSION S_MINUS EXPRESSION
-            | EXPRESSION S_MULTIPLY EXPRESSION
-            | EXPRESSION S_DIVISION EXPRESSION
-            | EXPRESSION S_MODULE EXPRESSION
-            | EXPRESSION S_POTENCY EXPRESSION
-            | EXPRESSION S_MAJOR EXPRESSION
-            | EXPRESSION S_MINOR EXPRESSION
-            | EXPRESSION S_MAJOREQUALS EXPRESSION
-            | EXPRESSION S_MINOREQUALS EXPRESSION
-            | EXPRESSION S_EQUALSEQUALS EXPRESSION
-            | EXPRESSION S_DIFFERENT EXPRESSION
-            | EXPRESSION S_OR EXPRESSION
-            | EXPRESSION S_AND EXPRESSION
-            | S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS
-            | id
-            | int
-            | double
-            | cadena
-            | cadena_char
-            | res_true
-            | res_false
-            | id S_OPEN_PARENTHESIS OPPARCALL S_CLOSE_PARENTHESIS
+EXPRESSION :  S_MINUS EXPRESSION %prec UMINUS {$$="exp":1}
+            | S_NOT EXPRESSION {$$="exp":1}
+            | EXPRESSION S_PLUS EXPRESSION{$$="exp":1}
+            | EXPRESSION S_MINUS EXPRESSION{$$="exp":1}
+            | EXPRESSION S_MULTIPLY EXPRESSION{$$="exp":1}
+            | EXPRESSION S_DIVISION EXPRESSION{$$="exp":1}
+            | EXPRESSION S_MODULE EXPRESSION{$$="exp":1}
+            | EXPRESSION S_POTENCY EXPRESSION{$$="exp":1}
+            | EXPRESSION S_MAJOR EXPRESSION{$$="exp":1}
+            | EXPRESSION S_MINOR EXPRESSION{$$="exp":1}
+            | EXPRESSION S_MAJOREQUALS EXPRESSION{$$="exp":1}
+            | EXPRESSION S_MINOREQUALS EXPRESSION{$$="exp":1}
+            | EXPRESSION S_EQUALSEQUALS EXPRESSION{$$="exp":1}
+            | EXPRESSION S_DIFFERENT EXPRESSION{$$="exp":1}
+            | EXPRESSION S_OR EXPRESSION{$$="exp":1}
+            | EXPRESSION S_AND EXPRESSION{$$="exp":1}
+            | S_OPEN_PARENTHESIS EXPRESSION S_CLOSE_PARENTHESIS {$$="exp":1}
+            | id {$$="exp":1}
+            | int{$$="exp":1}
+            | double{$$="exp":1}
+            | cadena{$$="exp":1}
+            | cadena_char{$$="exp":1}
+            | res_true{$$="exp":1}
+            | res_false{$$="exp":1}
+            | id S_OPEN_PARENTHESIS OPPARCALL S_CLOSE_PARENTHESIS{$$="exp":1}
             ;
-OPPARCALL : EXPRESSION EXPLIST
-           | //epsilon
+OPPARCALL : EXPRESSION EXPLIST{$$="exp":1}
+           | %empty
 ;
-EXPLIST : S_COMMA EXPRESSION EXPLIST
-            | //
+EXPLIST : S_COMMA EXPRESSION EXPLIST{$$="exp":1}
+            | %empty
 ;
 
+/*
 syntax_error
     : error SEMICOLON
       {
@@ -311,4 +380,4 @@ syntax_error
        {
          $$ = {"error":$1};
        }
-    ;
+    ;*/

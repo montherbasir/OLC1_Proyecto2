@@ -78,8 +78,12 @@ async function postData(txt) {
     }).catch(error => console.error('Error:', error));
 
     const json = await res.json();
+    document.getElementById("tree").innerHTML = "";
+    var render = renderjson(json.AST);
+    document.getElementById("tree").appendChild(render);
     return json;
 }
+
 
 
 
